@@ -1,0 +1,94 @@
+/* Basis-Layout */
+.app {
+  margin: 0;
+  min-height: 100vh;
+  color: #e9eef5;
+  background: #0b1020;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Header (hellgrau) */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  background: #e5e7eb; /* hellgrau */
+  color: #111827; /* dunkler Text */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Links Logo, daneben Suche darf wachsen */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+/* Logo */
+.logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Content-Karte */
+.main {
+  padding: 1rem;
+  display: grid;
+  place-items: center;
+}
+.card {
+  width: min(800px, 90vw);
+  background: rgba(255, 255, 255, 0.92);
+  color: #111827;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Akzentfarbe (kommt als --accent inline aus React) */
+:root {
+  --accent: hsl(210 90% 50%);
+} /* Fallback */
+
+/* Lupe übernimmt die Akzentfarbe */
+.searchBtn {
+  color: var(--accent);
+}
+
+/* Kleines Farbbadge/Label */
+.badge {
+  font-variant-numeric: tabular-nums;
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid color-mix(in oklab, var(--accent), #000 20%);
+  background: color-mix(in oklab, var(--accent), #fff 85%);
+}
+
+/* Optional: Header-Rand in Akzent */
+.toolbar {
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Slider/Control (falls noch nicht vorhanden) */
+.control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 12px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  background: #fff;
+  color: #111827;
+}
+.slider {
+  width: 160px;
+}
