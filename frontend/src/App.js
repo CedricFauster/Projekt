@@ -1,94 +1,138 @@
 import { useState } from "react";
 import "./styles.css";
+import ExploreView from "./components/ExploreView";
+import FilterBar from "./components/FilterBar";
+import FocusView from "./components/FocusView";
 
 export default function App() {
-  const [q, setQ] = useState("");
-  const [submitted, setSubmitted] = useState("");
+  const [location, setLocation] = useState("nord");
+  const [dateFrom, setDateFrom] = useState("2024-01");
+  const [dateTo, setDateTo] = useState("2024-12");
+  const [weather, setWeather] = useState("nebel");
+  const [view, setView] = useState("fokus"); // "fokus" | "explore"
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    setSubmitted(q.trim());
+
+  const resetFilters = () => {
+    setLocation("nord");
+    setDateFrom("2024-01");
+    setDateTo("2024-12");
+    setWeather("nebel");
   };
 
-  const [hue, setHue] = useState(210);
+  const locationLabel =
+        location === "nord"
+      ? "Bahnhofstrasse Nord"
+      : location === "mitte"
+      ? "Bahnhofstrasse Mitte"
+      : location === "sued"
+      ? "Bahnhofstrasse Sued"
+      : location === "lintheschergasse"
+      ? "Lintheschergasse"
+      : location === "bahnhofplatz"
+      ? "Bahnhofplatz"
+      : "Alle";
+
+  const weatherLabel =
+    weather === "nebel"
+      ? "Nebel"
+      : weather === "regen"
+      ? "Regen"
+      : weather === "sonne"
+      ? "Sonne"
+      : weather === "bewoelkt"
+      ? "Bewoelkt"
+      : weather === "schnee"
+      ? "Schnee"
+      : "Alle";
 
   return (
-    <div className="app" style={{ "--accent": "hsl(" + hue + " 90% 50%)" }}>
+    <div className="app">
       <header className="toolbar">
         <div className="brand">
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg"
-            title="Youtube-Logo"
-            className="logo"
-          />
-
-          <form
-            role="search"
-            aria-label="Webseite durchsuchen"
-            onSubmit={onSubmit}
-            className="searchForm"
-          >
-            <div className="searchWrap">
-              <input
-                type="search"
-                placeholder="Suchen..."
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="searchInput"
-              />
-
-              <button
-                type="submit"
-                aria-label="Suchen"
-                title="Suchen"
-                className="searchBtn"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="10"
-                  height="16"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.71.71l.27.28v.79L20 20.5 21.5 19 15.5 14zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </button>
-            </div>
-          </form>
-
-          <div className="control">
-            <label htmlFor="hue">Farbe</label>
-            <input
-              id="hue"
-              type="range"
-              min="0"
-              max="360"
-              step="1"
-              value={hue}
-              onChange={(e) => setHue(Number(e.target.value))}
-              className="slider"
-              aria-label="Akzentfarbe"
-              title={"Farbton: " + hue + "°"}
-            />
-            <span className="badge">{hue}°</span>
+          <div className="logoText">
+            <span className="logoTitle">Passantenfrequenzen Bahnhofstrasse</span>
+            <span className="logoSubtitle">
+             Webvisualisierung · Projekt 3050 · Open Data Stadt Zuerich
+            </span>
           </div>
+
+          <nav className="navButtons">
+            <button
+              className={view === "fokus" ? "navBtn active" : "navBtn"}
+              onClick={() => setView("fokus")}
+            >
+              Fokusfrage
+            </button>
+
+            <button
+              className={view === "explore" ? "navBtn active" : "navBtn"}
+              onClick={() => setView("explore")}
+            >
+              Interaktive Abfrage
+            </button>
+          </nav>
         </div>
       </header>
 
+
       <main className="main">
-        <div className="card">
-          <h2>Willkommen auf der Startseite</h2>
-          <p>
-            Geben Sie etwas in die Suchleiste ein oder testen Sie den Regler.
-          </p>
-          {submitted && (
+
+        {view === "explore" && (
+          <FilterBar
+            location={location}
+            setLocation={setLocation}
+            dateFrom={dateFrom}
+            setDateFrom={setDateFrom}
+            dateTo={dateTo}
+            setDateTo={setDateTo}
+            weather={weather}
+            setWeather={setWeather}
+            onReset={resetFilters}
+          />
+        )}
+
+        {view === "fokus" && (
+          <div className="card">
+            <h2>Fokusfrage</h2>
             <p>
-              <strong>Gesucht:</strong> {submitted}
+              Wie unterscheidet sich der Anteil von <strong>Kindern</strong> und{" "}
+              <strong>Erwachsenen</strong> bei <strong>Nebel</strong> an der{" "}
+              <strong>Bahnhofstrasse Nord</strong> im Jahr <strong>2024</strong>?
             </p>
-          )}
+
+            <p className="meta">
+              Ort: Bahnhofstrasse Nord · Wetter: Nebel · Jahr: 2024
+            </p>
+
+            <div className="chartBox">
+              <FocusView />
+            </div>
+
+            <p className="meta">
+             Der Anteil der Kinder ist in den Sommermonaten am höchsten, während im Winter
+             der Anteil der Erwachsenen überwiegt.
+            </p>
+          </div>
+        )}
+
+        {view === "explore" && (
+          <div className="card">
+            <h2>Interaktive Abfrage</h2>
+            <p className="meta">
+              Vergleich der absoluten Passantenfrequenzen pro Monat (Kinder vs Erwachsene).
+            </p>
+
+          <div className="chartBox">
+            <ExploreView
+              location={location}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              weather={weather}
+            />
+          </div>
         </div>
+      )}
+
       </main>
     </div>
   );
