@@ -14,9 +14,7 @@ Verarbeitbare Perimeter:
 5. granularity = ["day", "week", "month", "quarter", "year"]
 '''
 
-
-
-from typing import Optional # Wird für optionale Query-Parameter benötigt
+from typing import Optional # um Anfragen optional genauer einzugrenzen
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse # Wird benötigt, wenn wir JSON-String zurückgeben
 import pandas as pd
@@ -74,7 +72,7 @@ def get_data_stats():
         "status": "Daten geladen",
         "total_rows": len(df_data),
         "columns": list(df_data.columns),
-        "memory_usage": f"{df_data.memory_usage(deep = True).sum() / (1024**2):.2f} MB"
+        "memory_usage": f"{df_data.memory_usage(deep=True).sum() / (1024**2):.2f} MB"
     }
 
 
@@ -167,8 +165,9 @@ def get_aggregated_data(
     if location_name:
         if location_name not in df_agg['location_name'].unique():
             raise HTTPException(
-                status_code=404, 
-                detail=f"Standort '{location_name}' nicht gefunden.")
+                status_code = 404, 
+                detail = f"Standort '{location_name}' nicht gefunden."
+                )
         df_agg = df_agg[df_agg['location_name'] == location_name]
 
 
@@ -187,7 +186,10 @@ def get_aggregated_data(
     elif granularity.lower() == 'year':
         resample_rule = 'YE'
     else:
-        raise HTTPException(status_code=400, detail="Ungültige Granularität. Wähle 'day', 'week', 'month', 'quarter' oder 'year'.")
+        raise HTTPException(
+            status_code = 400, 
+            detail="Ungültige Granularität. Wähle 'day', 'week', 'month', 'quarter' oder 'year'."
+            )
 
     # 3. Resampling und Aggregation
     
@@ -235,8 +237,8 @@ def get_filtered_data(
     if location_name:
         if location_name not in df_filtered['location_name'].unique():
             raise HTTPException(
-                status_code=404, 
-                detail=f"Standort '{location_name}' nicht gefunden."
+                status_code = 404, 
+                detail = f"Standort '{location_name}' nicht gefunden."
                 )
         df_filtered = df_filtered[df_filtered['location_name'] == location_name]
     
@@ -256,8 +258,8 @@ def get_filtered_data(
 
         except ValueError as e:
             raise HTTPException(
-                status_code=400, 
-                detail=f"Ungültiges Datumsformat des Parameters. {e}"
+                status_code = 400, 
+                detail = f"Ungültiges Datumsformat des Parameters. {e}"
                 )
 
     # 4. Filterung nach Zeit
@@ -270,8 +272,8 @@ def get_filtered_data(
             df_filtered = df_filtered.drop(columns=['hour'])
         else:
             raise HTTPException(
-                status_code=400, 
-                detail="Ungültiger Wert für den Parameter 'hour'. Geben Sie eine Zahl zwischen 0 und 23 ein."
+                status_code = 400, 
+                detail = "Ungültiger Wert für den Parameter 'hour'. Geben Sie eine Zahl zwischen 0 und 23 ein."
             )
 
 
@@ -304,7 +306,7 @@ def get_filtered_data(
     
     # Rückgabe des ungefilterten, aber kleinen Datensatzes direkt als JSON-String
     print(f"INFO: Rückgabe von {len(df_filtered)} Zeilen (keine Aggregation).")
-    return JSONResponse(content=df_filtered.to_json(orient='records'))
+    return JSONResponse(content = df_filtered.to_json(orient='records'))
 
 
 
