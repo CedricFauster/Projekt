@@ -27,24 +27,3 @@ true, 40
 
 measured:
 measured, 106485
-
-
-Abgefragt mittels:
-@app.get("/column_profile")
-def get_column_profile(column_name: str):   
-    if df_data.empty:
-        raise HTTPException(status_code=500, detail="Daten konnten nicht geladen werden.")
-
-    if column_name not in df_data.columns:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"Spalte '{column_name}' nicht im Datensatz gefunden."
-        )
-
-    profile = df_data[column_name].value_counts()
-
-    profile_df = profile.reset_index()
-    profile_df.columns = ['value', 'count']
-    profile_df = profile_df.where(pd.notnull, None) 
-    
-    return profile_df.to_dict("records")

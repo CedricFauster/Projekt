@@ -1,6 +1,6 @@
 '''
 1.  richtige env auswählen "3050-WID_Backend"
-2.  lokal laden: code in terminal eingeben: "uvicorn backend_app:app --reload"
+2.  lokal laden: code in terminal eingeben: "cd backend" "uvicorn backend_app:app --reload"
 3.  Uvicorn "http://127.0.0.1:8000" aufrufen, muss aber mit "/{z.B. data, stats oder location}" ergänzt werden
 
 ##################################################################################################################
@@ -21,8 +21,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse # Wird benötigt, wenn wir JSON-String zurückgeben
 import pandas as pd
 
-# Datensatz laden (gleicher Ordner wie backend_app.py!)
-DATA_FILE = "Gesamtdatensatz.csv" 
+# Datensatz laden (muss in data liegen)
+DATA_FILE = "data/Gesamtdatensatz.csv" 
 
 
 '''
@@ -70,7 +70,7 @@ def get_data_stats():
     if df_data.empty:
         return {"error": "Daten konnten nicht geladen werden. Bitte stellen Sie unser Projekt nich so sehr auf die Probe (wir wissen nicht was wir tun!)."}
         
-    return {
+    return{
         "status": "Daten geladen",
         "total_rows": len(df_data),
         "columns": list(df_data.columns),
@@ -92,7 +92,7 @@ def get_time_range():
     max_time = df_data['timestamp'].max()
     
     # return mit .isoformat wird datum als ISO8601 Format gesendet -> eindeutige front- backend verarbeitung.
-    return {
+    return{
         "min_timestamp": min_time.isoformat(),
         "max_timestamp": max_time.isoformat()
     }
@@ -111,8 +111,25 @@ def get_all_locations():
     # .tolist macht aus einem array eine hübsche python list
     location_list = df_data['location_name'].unique().tolist()
     
-    return {
+    return{
         "locations": location_list
+    }
+
+
+# Wetter laden
+@app.get("/weather")
+def get_all_weather_conditions():
+    
+    if df_data.empty:
+        raise HTTPException(
+            status_code = 500, 
+            detail = "Daten konnten nicht geladen werden. Keine Wetterkondizionen verfügbar."
+        )
+
+    weather_list = df_data['weather_condition'].unique().tolist()
+
+    return{
+        "weather_condition": weather_list
     }
 
 '''
@@ -156,7 +173,7 @@ def get_aggregated_data(
 
 
     '''
-    Regeln und code zur Aggregation aus https://pandas.pydata.org/docs/user_guide/timeseries.html#resampling und ChatGPT von Open AI.
+    Code zur Aggregation aus https://pandas.pydata.org/docs/user_guide/timeseries.html#resampling.
     '''
     # 2. Definiere die Aggregationsbasis
     if granularity.lower() == 'day':
