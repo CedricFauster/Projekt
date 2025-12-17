@@ -1,0 +1,303 @@
+'''
+1.  richtige env auswählen "3050-WID_Backend"
+2.  lokal laden: code in terminal eingeben: "uvicorn backend_app:app --reload"
+3.  Uvicorn "http://127.0.0.1:8000" aufrufen, muss aber mit "/{z.B. data, stats oder location}" ergänzt werden
+
+##################################################################################################################
+
+Verarbeitbare Perimeter:
+1.  start_time = "YYYY-MM-DD"
+2.  end_time = "YYYY-MM-DD"
+3.  hour = [1, 2, 3, ... , 22, 23, 0] as int
+4.  location_name = ["Bahnhofstrasse (Mitte)", "Bahnhofstrasse (Nord)", "Bahnhofstrasse (Süd)", "Lintheschergasse"]
+
+5. granularity = ["day", "week", "month", "quarter", "year"]
+'''
+
+
+
+from typing import Optional # Wird für optionale Query-Parameter benötigt
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse # Wird benötigt, wenn wir JSON-String zurückgeben
+import pandas as pd
+
+# Datensatz laden (gleicher Ordner wie backend_app.py!)
+DATA_FILE = "Gesamtdatensatz.csv" 
+
+
+'''
+Abgeschlossen:
+1.  alle imports abgeschlossen
+2.  Richtiger Datensatz geladen
+
+Folgend
+1.  Instanzierung
+2.  Datensatz lesen
+'''
+
+app = FastAPI()
+
+# 2. DataFrame für die Speicherung der Daten initialisieren
+try:
+    df_data = pd.read_csv(DATA_FILE)
+    
+    # Formatscheisse: format='ISO8601' (2004-06-14T23:34:30), damit das panda richtig parsen kann. 
+    df_data['timestamp'] = pd.to_datetime(
+        df_data['timestamp'], 
+        format = 'ISO8601', 
+        utc = True
+    )
+    
+    print(f"Daten erfolgreich geladen. Anzahl Zeilen: {len(df_data)}")
+except FileNotFoundError:
+    print(f"FEHLER: Die Datei '{DATA_FILE}' wurde nicht gefunden.")
+    df_data = pd.DataFrame() 
+
+
+'''
+Abgeschlossen:
+1.  df_data enthält alle Daten von gottgegebenen DATA_FILE
+2.  fängt ab falls kein Datensatz vorhanden
+
+Folgend:
+1.  Endpunkte für Datenabfrage
+'''
+
+# Datenübersicht laden
+@app.get("/stats")
+def get_data_stats():
+    
+    if df_data.empty:
+        return {"error": "Daten konnten nicht geladen werden. Bitte stellen Sie unser Projekt nich so sehr auf die Probe (wir wissen nicht was wir tun!)."}
+        
+    return {
+        "status": "Daten geladen",
+        "total_rows": len(df_data),
+        "columns": list(df_data.columns),
+        "memory_usage": f"{df_data.memory_usage(deep = True).sum() / (1024**2):.2f} MB"
+    }
+
+
+# Zeitspanne von {YYYY-MM-DD} bis {YYYY-MM-DD} laden
+@app.get("/time_range")
+def get_time_range():
+    
+    if df_data.empty:
+        raise HTTPException(
+            status_code = 500, 
+            detail = "Daten konnten nicht geladen werden. Keine Zeitinformation verfügbar."
+        )
+        
+    min_time = df_data['timestamp'].min()
+    max_time = df_data['timestamp'].max()
+    
+    # return mit .isoformat wird datum als ISO8601 Format gesendet -> eindeutige front- backend verarbeitung.
+    return {
+        "min_timestamp": min_time.isoformat(),
+        "max_timestamp": max_time.isoformat()
+    }
+
+# Standorte laden
+@app.get("/locations")
+def get_all_locations():
+    
+    if df_data.empty:
+        raise HTTPException(
+            status_code = 500, 
+            detail = "Daten konnten nicht geladen werden. Keine Standortinformation verfügbar."
+        )
+    
+    # .unique sucht in der richtigen Spalte
+    # .tolist macht aus einem array eine hübsche python list
+    location_list = df_data['location_name'].unique().tolist()
+    
+    return {
+        "locations": location_list
+    }
+
+'''
+Abgeschlossen:
+1.  Spezifische Metadaten laden
+
+Folgend:
+1. Fokusfrage lösen
+2. Lösung laden und senden
+'''
+
+@app.get("/fokusfrage")
+def solve_fokusfrage():
+    return f'Fokusfragen werden sicherlich nicht beantwortet'
+
+
+'''
+Abgeschlossen:
+1.  -
+
+Folgend:
+1. Zusammengefasste Daten
+'''
+
+# Aggregierte Daten von entweder tagen, wochen, monaten, quartalen oder jahre
+@app.get("/aggregate")
+def get_aggregated_data(
+    granularity: str, # 'day', 'week', 'month', 'quarter', 'year'
+    location_name: Optional[str] = None
+):
+
+    df_agg = df_data.copy()
+    
+    # 1. Filterung nach Standort
+    if location_name:
+        if location_name not in df_agg['location_name'].unique():
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Standort '{location_name}' nicht gefunden.")
+        df_agg = df_agg[df_agg['location_name'] == location_name]
+
+
+    '''
+    Regeln und code zur Aggregation aus https://pandas.pydata.org/docs/user_guide/timeseries.html#resampling und ChatGPT von Open AI.
+    '''
+    # 2. Definiere die Aggregationsbasis
+    if granularity.lower() == 'day':
+        resample_rule = 'D'
+    elif granularity.lower() == 'week':
+        resample_rule = 'W'
+    elif granularity.lower() == 'month':
+        resample_rule = 'M'
+    elif granularity.lower() == 'quarter':
+        resample_rule = 'Q'
+    elif granularity.lower() == 'year':
+        resample_rule = 'YE'
+    else:
+        raise HTTPException(status_code=400, detail="Ungültige Granularität. Wähle 'day', 'week', 'month', 'quarter' oder 'year'.")
+
+    # 3. Resampling und Aggregation
+    
+    # Setze 'timestamp' als Index für das Resampling
+    df_agg = df_agg.set_index('timestamp')
+    
+    # Wähle nur die relevanten Zählspalten für die Summe aus
+    count_columns = [col for col in df_agg.columns if 'count' in col and 'id' not in col]
+    
+    # Führe das Resampling (zeitliche Aggregation) durch und summiere die Zählungen
+    df_resampled = df_agg[count_columns].resample(resample_rule).sum()
+    
+    # Die Aggregation erfordert, dass Standort und Wetter-Infos als neue Spalten hinzugefügt werden (oder weggelassen)
+    # Für diesen einfachen Endpunkt geben wir nur die Zählungen zurück.
+    
+    df_resampled = df_resampled.reset_index() # Mache 'timestamp' wieder zu einer Spalte
+    
+    # 4. JSON-Konformität sicherstellen und Rückgabe
+    df_resampled = df_resampled.where(pd.notnull, None) 
+    
+    # Wir senden das JSON als String zurück, um Serialisierungsprobleme zu vermeiden (wie zuvor gelernt)
+    return JSONResponse(content=df_resampled.to_json(orient='records'))
+
+
+'''
+Abgeschlossen:
+1.  Zusammengefasste Daten
+
+Folgend:
+1.  Datenexploration
+'''
+
+# Alle Daten senden oder optional nach (1) Standort, (2) Startzeit, (3) Endzeit und (4) Uhrzeit filtern.
+@app.get("/data")
+def get_filtered_data(
+    location_name: Optional[str] = None, 
+    start_time: Optional[str] = None,    
+    end_time: Optional[str] = None,
+    hour: Optional[int] = None      
+):
+ 
+    df_filtered = df_data.copy()
+    
+    # 1. Filterung nach Standort
+    if location_name:
+        if location_name not in df_filtered['location_name'].unique():
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Standort '{location_name}' nicht gefunden."
+                )
+        df_filtered = df_filtered[df_filtered['location_name'] == location_name]
+    
+    # 2. und 3. Filterung nach Zeitraum 
+    if start_time or end_time:
+        try:
+            if start_time:
+                # Formatscheisse: .to_datetime wandelt das client format in datensatz format zum suchen .
+                start_dt = pd.to_datetime(start_time, format='%Y-%m-%d', utc=True) 
+                df_filtered = df_filtered[df_filtered['timestamp'] >= start_dt]
+            
+            if end_time:
+                end_dt = pd.to_datetime(end_time, format='%Y-%m-%d', utc=True)
+                # Inklusives Ende ("bis und mit")
+                end_dt_inclusive = end_dt + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+                df_filtered = df_filtered[df_filtered['timestamp'] <= end_dt_inclusive]
+
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Ungültiges Datumsformat des Parameters. {e}"
+                )
+
+    # 4. Filterung nach Zeit
+    if hour is not None:
+        if 0 <= hour <= 23:
+            # temporäre Spalte für die Stunde (0 bis 23) erstellen und dataframe damit filtern
+            df_filtered['hour'] = df_filtered['timestamp'].dt.hour
+            df_filtered = df_filtered[df_filtered['hour'] == hour]
+            # temporäre Spalte löschen
+            df_filtered = df_filtered.drop(columns=['hour'])
+        else:
+            raise HTTPException(
+                status_code=400, 
+                detail="Ungültiger Wert für den Parameter 'hour'. Geben Sie eine Zahl zwischen 0 und 23 ein."
+            )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # 5. Leistungsprüfung (Aggregation ab 5000 Zeilen)
+    if len(df_filtered) > 5000:
+        
+        # ... (Deine gesamte Aggregationslogik, wie zuvor definiert)
+        df_filtered['date'] = df_filtered['timestamp'].dt.date
+        aggregation_columns = [
+             col for col in df_filtered.columns 
+             if 'count' in col or col in ['location_name', 'date']
+        ]
+        df_aggregated = df_filtered[aggregation_columns].groupby(['location_name', 'date']).sum().reset_index()
+        
+        # option='split' ist das bevorzugte Format für Altair/Vega.
+        return df_aggregated.to_json(orient='records')
+    
+    
+    # Rückgabe des ungefilterten, aber kleinen Datensatzes direkt als JSON-String
+    print(f"INFO: Rückgabe von {len(df_filtered)} Zeilen (keine Aggregation).")
+    return JSONResponse(content=df_filtered.to_json(orient='records'))
+
+
+
+
+
+
+
+
+
+
+
+
+

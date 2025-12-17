@@ -1,0 +1,50 @@
+Nominale Kategorien:
+
+
+location_name:
+"Bahnhofstrasse (Mitte)", 33610
+"Bahnhofstrasse (Nord)", 33610
+"Bahnhofstrasse (Süd)", 33610
+"Lintheschergasse", 33610
+
+
+weather_conditions:
+"cloudy", 31284
+"partly-cloudy-day", 31144
+"partly-cloudy-night", 25812
+"rain", 25172
+"clear-day", 10284
+"clear-night", 9068
+"snow", 1152
+"fog", 444
+"wind", 80
+
+
+unverified:
+false, 134400
+true, 40
+
+
+measured:
+measured, 106485
+
+
+Abgefragt mittels:
+@app.get("/column_profile")
+def get_column_profile(column_name: str):   
+    if df_data.empty:
+        raise HTTPException(status_code=500, detail="Daten konnten nicht geladen werden.")
+
+    if column_name not in df_data.columns:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Spalte '{column_name}' nicht im Datensatz gefunden."
+        )
+
+    profile = df_data[column_name].value_counts()
+
+    profile_df = profile.reset_index()
+    profile_df.columns = ['value', 'count']
+    profile_df = profile_df.where(pd.notnull, None) 
+    
+    return profile_df.to_dict("records")
