@@ -10,8 +10,8 @@ Verarbeitbare Perimeter:
 2.  end_time = "YYYY-MM-DD"
 3.  hour = [1, 2, 3, ... , 22, 23, 0] as int
 4.  location_name = ["Bahnhofstrasse (Mitte)", "Bahnhofstrasse (Nord)", "Bahnhofstrasse (Süd)", "Lintheschergasse"]
-
-5. granularity = ["day", "week", "month", "quarter", "year"]
+5.  Weather = []
+6.  granularity = ["day", "week", "month", "quarter", "year"]
 '''
 
 from typing import Optional # um Anfragen optional genauer einzugrenzen
@@ -34,6 +34,20 @@ Folgend
 '''
 
 app = FastAPI()
+
+
+from fastapi.middleware.cors import CORSMiddleware
+
+# Das ist der "Türsteher", der deinem Kollegen den Zutritt erlaubt
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Das Sternchen bedeutet: Erlaube Anfragen von JEDER Adresse
+    allow_credentials=True,
+    allow_methods=["*"], # Erlaube alle Funktionen (GET, POST, etc.)
+    allow_headers=["*"], # Erlaube alle Metadaten im Header
+)
+
+
 
 # 2. DataFrame für die Speicherung der Daten initialisieren
 try:
