@@ -85,39 +85,50 @@ export default function ExploreView({
     fetchData();
   }, [location, dateFrom, dateTo, group, weatherList]); // Alle Abhängigkeiten drin
 
-  // 2. Daten für Vega formatieren (Mapping von Spalten auf Zeilen)
   const { values, isSingleYear } = useMemo(() => {
-    const out = [];
+    const monthlyAgg = {};
 
+    // 1. Alle Daten vom Backend durchlaufen und pro Monat zusammenzählen
     backendData.forEach((item) => {
       const dateObj = new Date(item.timestamp);
       const year = dateObj.getFullYear();
       const monthNum = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const ym = `${year}-${monthNum}`;
+      const key = `${year}-${monthNum}`; // Beispiel: "2024-05"
 
-      // Wir müssen die Spalten "adults_count" und "children_count"
-      // in einzelne Einträge für Vega umwandeln (Tidy Data Format)
+      // Falls der Monat noch nicht im Speicher ist, neu anlegen
+      if (!monthlyAgg[key]) {
+        monthlyAgg[key] = {
+          ym: key,
+          month: MONTH_MAP[monthNum],
+          Kinder: 0,
+          Erwachsene: 0,
+        };
+      }
+
+      // Die Werte auf den Monat addieren
+      monthlyAgg[key].Kinder += item.child_pedestrians_count || 0;
+      monthlyAgg[key].Erwachsene += item.adult_pedestrians_count || 0;
+    });
+
+    // 2. Die Daten für Vega-Lite umformen (ein Objekt pro Balken)
+    const out = [];
+    Object.values(monthlyAgg).forEach((m) => {
+      out.push({ ym: m.ym, month: m.month, group: "Kinder", count: m.Kinder });
       out.push({
-        ym: ym,
-        month: MONTH_MAP[monthNum],
-        monthNum: monthNum,
+        ym: m.ym,
+        month: m.month,
         group: "Erwachsene",
-        count: item.pedestrians_count || 0, // Passe Spaltennamen an dein Backend an!
-      });
-      // Falls dein Backend Kinder separat zählt:
-      out.push({
-        ym: ym,
-        month: MONTH_MAP[monthNum],
-        monthNum: monthNum,
-        group: "Kinder",
-        count: item.children_count || 0,
+        count: m.Erwachsene,
       });
     });
 
-    // Prüfen ob nur ein Jahr ausgewählt ist
+    // Check ob nur ein Jahr im Spiel ist (für die X-Achse)
     const fromY = dateFrom?.slice(0, 4);
     const toY = dateTo?.slice(0, 4);
     const singleYear = fromY === toY;
+
+    // Sortieren damit die Monate in der richtigen Reihenfolge sind
+    out.sort((a, b) => a.ym.localeCompare(b.ym));
 
     return { values: out, isSingleYear: singleYear };
   }, [backendData, dateFrom, dateTo]);

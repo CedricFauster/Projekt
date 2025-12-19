@@ -19,10 +19,14 @@ const MONTHS = [
 
 const WEATHER_OPTIONS = [
   { id: "cloudy", label: "Bewölkt" },
+  { id: "partly-cloudy-day", label: "Teils bewölkter Tag" },
+  { id: "partly-cloudy-night", label: "Teils bewölkte Nacht" },
   { id: "rain", label: "Regen" },
+  { id: "clear-day", label: "Klarer Himmel (Tag)" },
+  { id: "clear-night", label: "Freier Himmel (Nacht)" },
   { id: "fog", label: "Nebel" },
   { id: "snow", label: "Schnee" },
-  { id: "clear-day", label: "Sonne" },
+  { id: "wind", label: "Wind" },
 ];
 
 export default function FilterBar({
@@ -148,7 +152,7 @@ export default function FilterBar({
                 checked={group === g}
                 onChange={(e) => setGroup(e.target.value)}
               />
-              {g === "beide" ? "Alle" : g.charAt(0).toUpperCase() + g.slice(1)}
+              {g === "beide" ? "Beide" : g.charAt(0).toUpperCase() + g.slice(1)}
             </label>
           ))}
         </div>
