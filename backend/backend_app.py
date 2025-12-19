@@ -53,7 +53,7 @@ app.add_middleware(
 try:
     df_data = pd.read_csv(DATA_FILE)
     
-    # Formatscheisse: format='ISO8601' (2004-06-14T23:34:30), damit das panda richtig parsen kann. 
+    # Formatscheisse: format='ISO8601' (2004-06-14T23:34:30).Das panda richtig parsen kann. 
     df_data['timestamp'] = pd.to_datetime(
         df_data['timestamp'], 
         format = 'ISO8601', 
@@ -130,7 +130,7 @@ def get_all_locations():
 
 # Wetter laden
 @app.get("/weather")
-def get_all_weather_conditions():
+def get_weather_conditions():
     
     if df_data.empty:
         raise HTTPException(
@@ -153,17 +153,52 @@ Folgend:
 2. Lösung laden und senden
 '''
 
-@app.get("/fokusfrage")
-def solve_fokusfrage():
-    return f'Fokusfragen werden sicherlich nicht beantwortet'
 
+@app.get("/fokusfrage")
+def get_fokusfrage_data():
+    ist_2024 = df_data['timestamp'].dt.year == 2024
+    ist_nord = df_data['location_name'] == 'Bahnhofstrasse (Nord)'
+    ist_nebel = df_data['weather_condition'].str.lower().str.contains('fog', na=False)
+
+    df_gefiltert = df_data[ist_2024 & ist_nord & ist_nebel].copy()
+
+    monats_namen = {
+        1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 
+        7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"
+    }
+    
+    ergebnis_liste = []
+
+    for monat_nr in range(1, 13):
+        name = monats_namen[monat_nr]
+        
+        # Daten für iterierten Monat abrufen
+        daten_monat = df_gefiltert[df_gefiltert['timestamp'].dt.month == monat_nr]
+        
+        # Anteile berechnen 
+        kinder = daten_monat['child_pedestrians_count'].sum()
+        erwachsene = daten_monat['adult_pedestrians_count'].sum()
+        gesamt = kinder + erwachsene
+        
+        if gesamt > 0:
+            anteil_kinder = kinder / gesamt
+            anteil_erwachsene = erwachsene / gesamt
+        else:
+            anteil_kinder = 0
+            anteil_erwachsene = 0
+    
+        # Formatierung für frontendboss
+        ergebnis_liste.append({"month": name, "group": "Kinder", "share": anteil_kinder})
+        ergebnis_liste.append({"month": name, "group": "Erwachsene", "share": anteil_erwachsene})
+
+    return ergebnis_liste
 
 '''
 Abgeschlossen:
-1.  -
+1.  Fokusfrage gelöst
 
 Folgend:
-1. Zusammengefasste Daten
+1.  Zusammengefasste Daten
 '''
 
 # Aggregierte Daten von entweder tagen, wochen, monaten, quartalen oder jahre
@@ -236,59 +271,54 @@ Folgend:
 1.  Datenexploration
 '''
 
-# Alle Daten senden oder optional nach (1) Standort, (2) Startzeit, (3) Endzeit und (4) Uhrzeit filtern.
+# Alle Daten senden oder optional nach (1) Standort, (2) Startzeit, (3) Endzeit, (4) Uhrzeit, (5) Fussgängergruppe und 6(Wetter) filtern.
+from fastapi import Query # Wichtig: Query oben bei den Imports ergänzen!
+
 @app.get("/data")
 def get_filtered_data(
     location_name: Optional[str] = None, 
     start_time: Optional[str] = None,    
     end_time: Optional[str] = None,
-    hour: Optional[int] = None      
+    hour: Optional[int] = None,
+    group: str = "beide", # 'kinder', 'erwachsene' oder 'beide'
+    weather: Optional[list[str]] = Query(None) 
 ):
- 
     df_filtered = df_data.copy()
     
-    # 1. Filterung nach Standort
     if location_name:
-        if location_name not in df_filtered['location_name'].unique():
-            raise HTTPException(
-                status_code = 404, 
-                detail = f"Standort '{location_name}' nicht gefunden."
-                )
         df_filtered = df_filtered[df_filtered['location_name'] == location_name]
     
-    # 2. und 3. Filterung nach Zeitraum 
-    if start_time or end_time:
-        try:
-            if start_time:
-                # Formatscheisse: .to_datetime wandelt das client format in datensatz format zum suchen .
-                start_dt = pd.to_datetime(start_time, format='%Y-%m-%d', utc=True) 
-                df_filtered = df_filtered[df_filtered['timestamp'] >= start_dt]
-            
-            if end_time:
-                end_dt = pd.to_datetime(end_time, format='%Y-%m-%d', utc=True)
-                # Inklusives Ende ("bis und mit")
-                end_dt_inclusive = end_dt + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
-                df_filtered = df_filtered[df_filtered['timestamp'] <= end_dt_inclusive]
+    if start_time:
+        st = pd.to_datetime(start_time, utc=True)
+        df_filtered = df_filtered[df_filtered['timestamp'] >= st]
+        
+    if end_time:
+        et = pd.to_datetime(end_time, utc=True) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+        df_filtered = df_filtered[df_filtered['timestamp'] <= et]
 
-        except ValueError as e:
-            raise HTTPException(
-                status_code = 400, 
-                detail = f"Ungültiges Datumsformat des Parameters. {e}"
-                )
-
-    # 4. Filterung nach Zeit
     if hour is not None:
-        if 0 <= hour <= 23:
-            # temporäre Spalte für die Stunde (0 bis 23) erstellen und dataframe damit filtern
-            df_filtered['hour'] = df_filtered['timestamp'].dt.hour
-            df_filtered = df_filtered[df_filtered['hour'] == hour]
-            # temporäre Spalte löschen
-            df_filtered = df_filtered.drop(columns=['hour'])
-        else:
-            raise HTTPException(
-                status_code = 400, 
-                detail = "Ungültiger Wert für den Parameter 'hour'. Geben Sie eine Zahl zwischen 0 und 23 ein."
-            )
+        df_filtered = df_filtered[df_filtered['timestamp'].dt.hour == hour]
+
+    if weather and len(weather) > 0:
+        # .isin() prüft, ob das Wetter in der vom User geschickten Liste enthalten ist
+        df_filtered = df_filtered[df_filtered['weather_condition'].isin(weather)]
+
+    # --- NEU: FILTER FÜR GRUPPE (Radiobox) ---
+    # Wir löschen einfach die Spalten, die der User NICHT sehen will
+    if group == "kinder":
+        # Nur Kinder behalten, Erwachsene-Spalte weg
+        df_filtered = df_filtered.drop(columns=['adult_pedestrians_count'])
+    elif group == "erwachsene":
+        # Nur Erwachsene behalten, Kinder-Spalte weg
+        df_filtered = df_filtered.drop(columns=['child_pedestrians_count'])
+    # bei 'beide' lassen wir einfach alles drin
+
+    # Performance-Check (wie gehabt)
+    if len(df_filtered) > 5000:
+        # Hier könntest du bei Bedarf wieder eine Aggregation einbauen
+        pass 
+
+    return JSONResponse(content=df_filtered.to_json(orient='records'))
 
 
 

@@ -30,34 +30,49 @@ const MONTH_MAP = {
   12: "Dec",
 };
 
-export default function ExploreView({ location, dateFrom, dateTo, weather }) {
-  const [backendData, setBackendData] = useState([]); // State für die echten Daten
+export default function ExploreView({
+  location,
+  dateFrom,
+  dateTo,
+  group,
+  weatherList,
+}) {
+  // Props angepasst
+  const [backendData, setBackendData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 1. Daten vom Backend holen
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Mapping für Backend-Standorte (da dein Backend lange Namen erwartet)
         const locationMapping = {
+          all: "Alle",
           nord: "Bahnhofstrasse (Nord)",
           mitte: "Bahnhofstrasse (Mitte)",
           sued: "Bahnhofstrasse (Süd)",
           lintheschergasse: "Lintheschergasse",
-          bahnhofplatz: "Bahnhofplatz",
         };
         const realLocation = locationMapping[location] || location;
 
-        // URL zusammenbauen (wir nutzen deinen /aggregate Endpunkt für Performance!)
-        const url = `http://127.0.0.1:8000/aggregate?granularity=month&location_name=${encodeURIComponent(
+        // URL dynamisch aufbauen
+        // Wir nutzen /data statt /aggregate, weil /data deine neuen Filter (group/weather) unterstützt
+        let url = `http://127.0.0.1:8000/data?location_name=${encodeURIComponent(
           realLocation
-        )}`;
+        )}&group=${group}`;
+
+        if (dateFrom) url += `&start_time=${dateFrom}-01`;
+        if (dateTo) url += `&end_time=${dateTo}-28`;
+
+        // Wetter-Liste für FastAPI aufbereiten (?weather=fog&weather=rain)
+        if (weatherList && weatherList.length > 0) {
+          weatherList.forEach((w) => {
+            url += `&weather=${encodeURIComponent(w)}`;
+          });
+        }
 
         const response = await fetch(url);
         const result = await response.json();
 
-        // FastAPI sendet manchmal JSON als String -> parsen falls nötig
         const data = typeof result === "string" ? JSON.parse(result) : result;
         setBackendData(data);
       } catch (error) {
@@ -68,7 +83,7 @@ export default function ExploreView({ location, dateFrom, dateTo, weather }) {
     };
 
     fetchData();
-  }, [location, dateFrom, dateTo, weather]); // Effekt triggert bei Filteränderung
+  }, [location, dateFrom, dateTo, group, weatherList]); // Alle Abhängigkeiten drin
 
   // 2. Daten für Vega formatieren (Mapping von Spalten auf Zeilen)
   const { values, isSingleYear } = useMemo(() => {

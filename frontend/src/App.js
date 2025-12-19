@@ -8,19 +8,20 @@ export default function App() {
   const [location, setLocation] = useState("nord");
   const [dateFrom, setDateFrom] = useState("2024-01");
   const [dateTo, setDateTo] = useState("2024-12");
-  const [weather, setWeather] = useState("nebel");
-  const [view, setView] = useState("fokus"); // "fokus" | "explore"
-
+  const [group, setGroup] = useState("beide");
+  const [weatherList, setWeatherList] = useState([]);
+  const [view, setView] = useState("fokus");
 
   const resetFilters = () => {
     setLocation("nord");
     setDateFrom("2024-01");
     setDateTo("2024-12");
-    setWeather("nebel");
+    setGroup("beide");
+    setWeatherList([]);
   };
 
   const locationLabel =
-        location === "nord"
+    location === "nord"
       ? "Bahnhofstrasse Nord"
       : location === "mitte"
       ? "Bahnhofstrasse Mitte"
@@ -32,27 +33,16 @@ export default function App() {
       ? "Bahnhofplatz"
       : "Alle";
 
-  const weatherLabel =
-    weather === "nebel"
-      ? "Nebel"
-      : weather === "regen"
-      ? "Regen"
-      : weather === "sonne"
-      ? "Sonne"
-      : weather === "bewoelkt"
-      ? "Bewoelkt"
-      : weather === "schnee"
-      ? "Schnee"
-      : "Alle";
-
   return (
     <div className="app">
       <header className="toolbar">
         <div className="brand">
           <div className="logoText">
-            <span className="logoTitle">Passantenfrequenzen Bahnhofstrasse</span>
+            <span className="logoTitle">
+              Passantenfrequenzen Bahnhofstrasse
+            </span>
             <span className="logoSubtitle">
-             Webvisualisierung · Projekt 3050 · Open Data Stadt Zuerich
+              Webvisualisierung · Projekt 3050 · Open Data Stadt Zuerich
             </span>
           </div>
 
@@ -74,9 +64,7 @@ export default function App() {
         </div>
       </header>
 
-
       <main className="main">
-
         {view === "explore" && (
           <FilterBar
             location={location}
@@ -85,8 +73,10 @@ export default function App() {
             setDateFrom={setDateFrom}
             dateTo={dateTo}
             setDateTo={setDateTo}
-            weather={weather}
-            setWeather={setWeather}
+            group={group}
+            setGroup={setGroup}
+            weatherList={weatherList}
+            setWeatherList={setWeatherList}
             onReset={resetFilters}
           />
         )}
@@ -97,7 +87,8 @@ export default function App() {
             <p>
               Wie unterscheidet sich der Anteil von <strong>Kindern</strong> und{" "}
               <strong>Erwachsenen</strong> bei <strong>Nebel</strong> an der{" "}
-              <strong>Bahnhofstrasse Nord</strong> im Jahr <strong>2024</strong>?
+              <strong>Bahnhofstrasse Nord</strong> im Jahr <strong>2024</strong>
+              ?
             </p>
 
             <p className="meta">
@@ -109,8 +100,8 @@ export default function App() {
             </div>
 
             <p className="meta">
-             Der Anteil der Kinder ist in den Sommermonaten am höchsten, während im Winter
-             der Anteil der Erwachsenen überwiegt.
+              Der Anteil der Kinder ist in den Sommermonaten am höchsten,
+              während im Winter der Anteil der Erwachsenen überwiegt.
             </p>
           </div>
         )}
@@ -119,20 +110,21 @@ export default function App() {
           <div className="card">
             <h2>Interaktive Abfrage</h2>
             <p className="meta">
-              Vergleich der absoluten Passantenfrequenzen pro Monat (Kinder vs Erwachsene).
+              Vergleich der absoluten Passantenfrequenzen pro Monat (Kinder vs
+              Erwachsene).
             </p>
 
-          <div className="chartBox">
-            <ExploreView
-              location={location}
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              weather={weather}
-            />
+            <div className="chartBox">
+              <ExploreView
+                location={location}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                group={group}
+                weatherList={weatherList}
+              />
+            </div>
           </div>
-        </div>
-      )}
-
+        )}
       </main>
     </div>
   );

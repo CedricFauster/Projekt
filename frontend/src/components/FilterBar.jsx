@@ -1,3 +1,5 @@
+import React from "react";
+
 const YEARS = ["2021", "2022", "2023", "2024", "2025"];
 
 const MONTHS = [
@@ -12,7 +14,15 @@ const MONTHS = [
   { value: "09", label: "September" },
   { value: "10", label: "Oktober" },
   { value: "11", label: "November" },
-  { value: "12", label: "Dezember" }
+  { value: "12", label: "Dezember" },
+];
+
+const WEATHER_OPTIONS = [
+  { id: "cloudy", label: "Bewölkt" },
+  { id: "rain", label: "Regen" },
+  { id: "fog", label: "Nebel" },
+  { id: "snow", label: "Schnee" },
+  { id: "clear-day", label: "Sonne" },
 ];
 
 export default function FilterBar({
@@ -22,47 +32,37 @@ export default function FilterBar({
   setDateFrom,
   dateTo,
   setDateTo,
-  weather,
-  setWeather,
-  onReset
+  group,
+  setGroup,
+  weatherList,
+  setWeatherList,
+  onReset,
 }) {
-  // dateFrom/dateTo sind "YYYY-MM"
   const [fromYear, fromMonth] = dateFrom.split("-");
   const [toYear, toMonth] = dateTo.split("-");
 
   const makeYM = (y, m) => `${y}-${m}`;
 
-  const handleFromYearChange = (y) => {
-    const newFrom = makeYM(y, fromMonth);
-    setDateFrom(newFrom);
-    if (dateTo < newFrom) setDateTo(newFrom);
-  };
+  // --- HILFSFUNKTIONEN FÜR DATUM ---
+  const handleFromYearChange = (y) => setDateFrom(makeYM(y, fromMonth));
+  const handleFromMonthChange = (m) => setDateFrom(makeYM(fromYear, m));
+  const handleToYearChange = (y) => setDateTo(makeYM(y, toMonth));
+  const handleToMonthChange = (m) => setDateTo(makeYM(toYear, m));
 
-  const handleFromMonthChange = (m) => {
-    const newFrom = makeYM(fromYear, m);
-    setDateFrom(newFrom);
-    if (dateTo < newFrom) setDateTo(newFrom);
-  };
-
-  const handleToYearChange = (y) => {
-    const newTo = makeYM(y, toMonth);
-    setDateTo(newTo);
-    if (dateFrom > newTo) setDateFrom(newTo);
-  };
-
-  const handleToMonthChange = (m) => {
-    const newTo = makeYM(toYear, m);
-    setDateTo(newTo);
-    if (dateFrom > newTo) setDateFrom(newTo);
+  const toggleWeather = (id) => {
+    if (weatherList.includes(id)) {
+      setWeatherList(weatherList.filter((w) => w !== id));
+    } else {
+      setWeatherList([...weatherList, id]);
+    }
   };
 
   return (
     <div className="filterBar">
       {/* Standort */}
       <div className="filterGroup">
-        <label className="filterLabel" htmlFor="location">Standort</label>
+        <label className="filterLabel">Standort</label>
         <select
-          id="location"
           className="filterControl"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
@@ -75,92 +75,105 @@ export default function FilterBar({
         </select>
       </div>
 
-      {/* Von: Jahr */}
+      {/* Von Datum */}
       <div className="filterGroup">
-        <label className="filterLabel">Von (Jahr)</label>
-        <select
-          className="filterControl"
-          value={fromYear}
-          onChange={(e) => handleFromYearChange(e.target.value)}
-        >
-          {YEARS.map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Von: Monat */}
-      <div className="filterGroup">
-        <label className="filterLabel">Von (Monat)</label>
-        <select
-          className="filterControl"
-          value={fromMonth}
-          onChange={(e) => handleFromMonthChange(e.target.value)}
-        >
-          {MONTHS.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Bis: Jahr */}
-      <div className="filterGroup">
-        <label className="filterLabel">Bis (Jahr)</label>
-        <select
-          className="filterControl"
-          value={toYear}
-          onChange={(e) => handleToYearChange(e.target.value)}
-        >
-          {YEARS.map((y) => (
-            <option key={y} value={y} disabled={y < fromYear}>
-              {y}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Bis: Monat */}
-      <div className="filterGroup">
-        <label className="filterLabel">Bis (Monat)</label>
-        <select
-          className="filterControl"
-          value={toMonth}
-          onChange={(e) => handleToMonthChange(e.target.value)}
-        >
-          {MONTHS.map((m) => {
-            const disabled = toYear === fromYear ? m.value < fromMonth : false;
-            return (
-              <option key={m.value} value={m.value} disabled={disabled}>
-                {m.label}
+        <label className="filterLabel">Von</label>
+        <div style={{ display: "flex", gap: "4px" }}>
+          <select
+            className="filterControl"
+            value={fromYear}
+            onChange={(e) => handleFromYearChange(e.target.value)}
+          >
+            {YEARS.map((y) => (
+              <option key={y} value={y}>
+                {y}
               </option>
-            );
-          })}
-        </select>
+            ))}
+          </select>
+          <select
+            className="filterControl"
+            value={fromMonth}
+            onChange={(e) => handleFromMonthChange(e.target.value)}
+          >
+            {MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label.slice(0, 3)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Bis Datum */}
+      <div className="filterGroup">
+        <label className="filterLabel">Bis</label>
+        <div style={{ display: "flex", gap: "4px" }}>
+          <select
+            className="filterControl"
+            value={toYear}
+            onChange={(e) => handleToYearChange(e.target.value)}
+          >
+            {YEARS.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          <select
+            className="filterControl"
+            value={toMonth}
+            onChange={(e) => handleToMonthChange(e.target.value)}
+          >
+            {MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label.slice(0, 3)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="divider"></div>
+
+      {/* Gruppe */}
+      <div className="filterGroup">
+        <label className="filterLabel">Gruppe</label>
+        <div className="optionContainer">
+          {["beide", "kinder", "erwachsene"].map((g) => (
+            <label key={g} className="checkLabel">
+              <input
+                type="radio"
+                name="groupSelect"
+                value={g}
+                checked={group === g}
+                onChange={(e) => setGroup(e.target.value)}
+              />
+              {g === "beide" ? "Alle" : g.charAt(0).toUpperCase() + g.slice(1)}
+            </label>
+          ))}
+        </div>
       </div>
 
       {/* Wetter */}
-      <div className="filterGroup">
-        <label className="filterLabel" htmlFor="weather">Wetter</label>
-        <select
-          id="weather"
-          className="filterControl"
-          value={weather}
-          onChange={(e) => setWeather(e.target.value)}
-        >
-          <option value="all">Alle</option>
-          <option value="nebel">Nebel</option>
-          <option value="regen">Regen</option>
-          <option value="sonne">Sonne</option>
-          <option value="bewoelkt">Bewölkt</option>
-        </select>
+      <div className="filterGroup fullWidth">
+        <label className="filterLabel">Wetter (Mehrfachauswahl)</label>
+        <div className="checkboxGrid">
+          {WEATHER_OPTIONS.map((w) => (
+            <label key={w.id} className="checkLabel">
+              <input
+                type="checkbox"
+                checked={weatherList.includes(w.id)}
+                onChange={() => toggleWeather(w.id)}
+              />
+              {w.label}
+            </label>
+          ))}
+        </div>
       </div>
 
-      {/* Reset */}
       <div className="filterActions">
         <button type="button" className="btnSecondary" onClick={onReset}>
-          Zurücksetzen
+          Reset
         </button>
       </div>
     </div>

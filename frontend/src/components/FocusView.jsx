@@ -1,32 +1,19 @@
+import React, { useEffect, useState } from "react"; // Imports ergänzen
 import { VegaEmbed } from "react-vega";
 
 export default function FocusView() {
-  const data = [
-    { month: "Jan", group: "Kinder", share: 0.18 },
-    { month: "Jan", group: "Erwachsene", share: 0.82 },
-    { month: "Feb", group: "Kinder", share: 0.20 },
-    { month: "Feb", group: "Erwachsene", share: 0.80 },
-    { month: "Mar", group: "Kinder", share: 0.22 },
-    { month: "Mar", group: "Erwachsene", share: 0.78 },
-    { month: "Apr", group: "Kinder", share: 0.17 },
-    { month: "Apr", group: "Erwachsene", share: 0.83 },
-    { month: "May", group: "Kinder", share: 0.19 },
-    { month: "May", group: "Erwachsene", share: 0.81 },
-    { month: "Jun", group: "Kinder", share: 0.23 },
-    { month: "Jun", group: "Erwachsene", share: 0.77 },
-    { month: "Jul", group: "Kinder", share: 0.26 },
-    { month: "Jul", group: "Erwachsene", share: 0.74 },
-    { month: "Aug", group: "Kinder", share: 0.24 },
-    { month: "Aug", group: "Erwachsene", share: 0.76 },
-    { month: "Sep", group: "Kinder", share: 0.21 },
-    { month: "Sep", group: "Erwachsene", share: 0.79 },
-    { month: "Oct", group: "Kinder", share: 0.19 },
-    { month: "Oct", group: "Erwachsene", share: 0.81 },
-    { month: "Nov", group: "Kinder", share: 0.16 },
-    { month: "Nov", group: "Erwachsene", share: 0.84 },
-    { month: "Dec", group: "Kinder", share: 0.14 },
-    { month: "Dec", group: "Erwachsene", share: 0.86 }
-  ];
+  const [data, setData] = useState([]); // State für Backend-Daten
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/fokusfrage")
+      .then((res) => res.json())
+      .then((json) => {
+        setData(json);
+        setLoading(false);
+      })
+      .catch((err) => console.error("Fokusfrage Fehler:", err));
+  }, []);
 
   const spec = {
     $schema: "https://vega.github.io/schema/vega-lite/v5.json",
@@ -43,7 +30,20 @@ export default function FocusView() {
         field: "month",
         type: "ordinal",
         title: "Monat (2024)",
-        sort: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+        sort: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ],
         axis: {
           labelAngle: 0,
           labelPadding: 6,
@@ -61,8 +61,8 @@ export default function FocusView() {
             "datum.value === 'Sep' ? 'Sep' :" +
             "datum.value === 'Oct' ? 'Okt' :" +
             "datum.value === 'Nov' ? 'Nov' :" +
-            "'Dez'"
-        }
+            "'Dez'",
+        },
       },
 
       y: {
@@ -71,28 +71,33 @@ export default function FocusView() {
         title: "Anteil",
         stack: "normalize",
         scale: { domain: [0, 1] },
-        axis: { format: ".0%", grid: true, tickCount: 5, titlePadding: 10 }
+        axis: { format: ".0%", grid: true, tickCount: 5, titlePadding: 10 },
       },
 
       color: {
         field: "group",
         type: "nominal",
         legend: {
-            title: "Gruppe",
-            orient: "top",
-            direction: "horizontal"
+          title: "Gruppe",
+          orient: "top",
+          direction: "horizontal",
         },
         scale: {
-            domain: ["Erwachsene", "Kinder"],
-            range: ["#4C78A8", "#F58518"]
-        }
+          domain: ["Erwachsene", "Kinder"],
+          range: ["#4C78A8", "#F58518"],
+        },
       },
 
       tooltip: [
         { field: "month", type: "ordinal", title: "Monat" },
         { field: "group", type: "nominal", title: "Gruppe" },
-        { field: "share", type: "quantitative", title: "Anteil", format: ".1%" }
-      ]
+        {
+          field: "share",
+          type: "quantitative",
+          title: "Anteil",
+          format: ".1%",
+        },
+      ],
     },
 
     config: {
@@ -104,15 +109,16 @@ export default function FocusView() {
         titleColor: "#e5e7eb",
         gridColor: "rgba(255,255,255,0.12)",
         domainColor: "rgba(255,255,255,0.22)",
-        tickColor: "rgba(255,255,255,0.22)"
+        tickColor: "rgba(255,255,255,0.22)",
       },
 
       legend: {
         labelColor: "#e5e7eb",
-        titleColor: "#e5e7eb"
-      }
-    }
+        titleColor: "#e5e7eb",
+      },
+    },
   };
+  if (loading) return <p style={{ color: "white" }}>Berechne Fokusfrage...</p>;
 
   return (
     <div style={{ paddingTop: 8 }}>
