@@ -272,7 +272,7 @@ Folgend:
 '''
 
 # Alle Daten senden oder optional nach (1) Standort, (2) Startzeit, (3) Endzeit, (4) Uhrzeit, (5) Fussgängergruppe und 6(Wetter) filtern.
-from fastapi import Query # Wichtig: Query oben bei den Imports ergänzen!
+from fastapi import Query
 
 @app.get("/data")
 def get_filtered_data(
@@ -285,7 +285,7 @@ def get_filtered_data(
 ):
     df_filtered = df_data.copy()
     
-    if location_name:
+    if location_name and location_name != "Alle": # Wenn er "Alle" will soll nicht gefiltert werden.
         df_filtered = df_filtered[df_filtered['location_name'] == location_name]
     
     if start_time:

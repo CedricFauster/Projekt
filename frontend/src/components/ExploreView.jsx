@@ -54,48 +54,46 @@ export default function ExploreView({
         };
         const realLocation = locationMapping[location] || location;
 
-        // URL dynamisch aufbauen
-        // Wir nutzen /data statt /aggregate, weil /data deine neuen Filter (group/weather) unterstützt
+        // URL ohne Wetter und Gruppe -> wir holen das "große Paket" für den Zeitraum
         let url = `http://127.0.0.1:8000/data?location_name=${encodeURIComponent(
           realLocation
-        )}&group=${group}`;
-
+        )}`;
         if (dateFrom) url += `&start_time=${dateFrom}-01`;
         if (dateTo) url += `&end_time=${dateTo}-28`;
 
-        // Wetter-Liste für FastAPI aufbereiten (?weather=fog&weather=rain)
-        if (weatherList && weatherList.length > 0) {
-          weatherList.forEach((w) => {
-            url += `&weather=${encodeURIComponent(w)}`;
-          });
-        }
-
         const response = await fetch(url);
         const result = await response.json();
-
         const data = typeof result === "string" ? JSON.parse(result) : result;
         setBackendData(data);
       } catch (error) {
-        console.error("Backend-Verbindung fehlgeschlagen:", error);
+        console.error("Fehler beim Laden:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [location, dateFrom, dateTo, group, weatherList]); // Alle Abhängigkeiten drin
+  }, [location, dateFrom, dateTo]); // KEIN weatherList und group mehr hier!
 
   const { values, isSingleYear } = useMemo(() => {
     const monthlyAgg = {};
 
-    // 1. Alle Daten vom Backend durchlaufen und pro Monat zusammenzählen
-    backendData.forEach((item) => {
+    // --- NEU: LOKALES FILTERN ---
+    const filteredData = backendData.filter((item) => {
+      // Wetter-Filter: Wenn nichts gewählt ist, alles zeigen. Wenn was gewählt ist, muss es passen.
+      const weatherMatch =
+        weatherList.length === 0 ||
+        weatherList.includes(item.weather_condition);
+      return weatherMatch;
+    });
+
+    // --- AGGREGATION (wie gehabt, aber auf filteredData) ---
+    filteredData.forEach((item) => {
       const dateObj = new Date(item.timestamp);
       const year = dateObj.getFullYear();
       const monthNum = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const key = `${year}-${monthNum}`; // Beispiel: "2024-05"
+      const key = `${year}-${monthNum}`;
 
-      // Falls der Monat noch nicht im Speicher ist, neu anlegen
       if (!monthlyAgg[key]) {
         monthlyAgg[key] = {
           ym: key,
@@ -105,33 +103,43 @@ export default function ExploreView({
         };
       }
 
-      // Die Werte auf den Monat addieren
-      monthlyAgg[key].Kinder += item.child_pedestrians_count || 0;
-      monthlyAgg[key].Erwachsene += item.adult_pedestrians_count || 0;
+      // Gruppen-Filter Logik:
+      if (group === "beide" || group === "kinder") {
+        monthlyAgg[key].Kinder += item.child_pedestrians_count || 0;
+      }
+      if (group === "beide" || group === "erwachsene") {
+        monthlyAgg[key].Erwachsene += item.adult_pedestrians_count || 0;
+      }
     });
 
-    // 2. Die Daten für Vega-Lite umformen (ein Objekt pro Balken)
+    // Tidy Data für Vega
     const out = [];
     Object.values(monthlyAgg).forEach((m) => {
-      out.push({ ym: m.ym, month: m.month, group: "Kinder", count: m.Kinder });
-      out.push({
-        ym: m.ym,
-        month: m.month,
-        group: "Erwachsene",
-        count: m.Erwachsene,
-      });
+      if (group === "beide" || group === "kinder") {
+        out.push({
+          ym: m.ym,
+          month: m.month,
+          group: "Kinder",
+          count: m.Kinder,
+        });
+      }
+      if (group === "beide" || group === "erwachsene") {
+        out.push({
+          ym: m.ym,
+          month: m.month,
+          group: "Erwachsene",
+          count: m.Erwachsene,
+        });
+      }
     });
 
-    // Check ob nur ein Jahr im Spiel ist (für die X-Achse)
     const fromY = dateFrom?.slice(0, 4);
     const toY = dateTo?.slice(0, 4);
     const singleYear = fromY === toY;
 
-    // Sortieren damit die Monate in der richtigen Reihenfolge sind
     out.sort((a, b) => a.ym.localeCompare(b.ym));
-
     return { values: out, isSingleYear: singleYear };
-  }, [backendData, dateFrom, dateTo]);
+  }, [backendData, weatherList, group, dateFrom, dateTo]); // HIER triggert alles die Grafik neu, ohne Fetch!
 
   const spec = useMemo(() => {
     const axisCommon = {
