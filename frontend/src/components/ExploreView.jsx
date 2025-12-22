@@ -58,8 +58,8 @@ export default function ExploreView({
         let url = `http://127.0.0.1:8000/data?location_name=${encodeURIComponent(
           realLocation
         )}`;
-        if (dateFrom) url += `&start_time=${dateFrom}-01`;
-        if (dateTo) url += `&end_time=${dateTo}-28`;
+        if (dateFrom) url += `&start_time=${dateFrom}`;
+        if (dateTo) url += `&end_time=${dateTo}`;
 
         const response = await fetch(url);
         const result = await response.json();
@@ -206,6 +206,7 @@ export default function ExploreView({
             ...axisCommon,
             labelAngle: -45,
             labelExpr: monthYearExpr,
+            tickCount: 12,
           },
         };
 
@@ -223,16 +224,20 @@ export default function ExploreView({
 
     return {
       $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-      width: 900,
+
+      width: "container",
       height: 340,
+      autosize: {type: "fit", contains: "padding"},
       data: { values },
       transform,
 
-      mark: { type: "bar", cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 },
+      mark: isSingleYear
+        ? { type: "bar", cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 }
+        : { type: "line", strokeWidth: 2, point: false },
 
       encoding: {
         x: xEncoding,
-        xOffset: { field: "group" },
+        ...(isSingleYear ? { xOffset: { field: "group" } } : {}),
 
         y: {
           field: "count",

@@ -76,6 +76,7 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.15);
   box-shadow: 0 18px 35px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(148, 163, 184, 0.06);
+    overflow: hidden; /* verhindert, dass Leaflet rauslaeuft */
 }
 
 .card:hover {
@@ -95,6 +96,7 @@ body {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
 
 .meta {
   font-size: 0.8rem;
@@ -133,15 +135,25 @@ body {
   padding-left: 0.4rem;
 }
 
+
 .filterControl {
-  height: 38px;
-  padding: 0 0.75rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  height: 40px;
+  padding: 0 1rem;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(2, 6, 23, 0.7);
+
+  background: rgba(2, 6, 23, 0.85);
   color: var(--text);
-  outline: none;
+
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  font-size: 0.9rem;
+
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+
 
 .filterControl:focus {
   border-color: var(--accent);
@@ -206,6 +218,19 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
+.chartBox {
+  width: 100%;
+}
+
+.chartBox .vega-embed,
+.chartBox .vega-embed > div,
+.chartBox canvas,
+.chartBox svg {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+
 /* Optional placeholder */
 .placeholder {
   margin-top: 0.8rem;
@@ -240,16 +265,6 @@ body {
   gap: 0.6rem;
 }
 
-.navBtn {
-  text-decoration: none;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.95rem;
-  border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: rgba(2, 6, 23, 0.45);
-  color: var(--text);
-  transition: all 0.15s ease-out;
-}
 
 .navBtn:hover {
   border-color: var(--accent);
@@ -278,23 +293,6 @@ body {
 /* ===== Filter Controls – final polish ===== */
 
 /* Gemeinsames Reset für Inputs & Selects */
-.filterControl {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-
-  height: 40px;
-  padding: 0 1rem;
-  border-radius: 999px;
-
-  background: rgba(2, 6, 23, 0.85);
-  color: var(--text);
-
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  font-size: 0.9rem;
-
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
 
 /* Hover */
 .filterControl:hover {
@@ -305,6 +303,11 @@ body {
 .filterControl:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--accent);
+}
+
+.filterControl[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 /* Select: Pfeil selber zeichnen */
@@ -472,4 +475,79 @@ body {
 .filterBar > .filterGroup:first-child {
   min-width: 320px;
   max-width: 420px;
+}
+
+.twoCol {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .twoCol {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mapWrap h2 {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+.mapBox {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(2, 6, 23, 0.55);
+}
+
+.leafletRoot {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 360px;
+}
+
+.leafletRoot .leaflet-interactive {
+  cursor: pointer;
+}
+
+
+.mapLegend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(251, 113, 133, 0.9);
+  display: inline-block;
+}
+
+.activeDot {
+  background: rgba(56, 189, 248, 0.95);
+}
+
+/* Leaflet Controls etwas ruhiger */
+.leaflet-control-zoom a {
+  background: rgba(2, 6, 23, 0.8) !important;
+  color: #e5e7eb !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+}
+
+.chartBox {
+  overflow: hidden;
+}
+
+.chartBox > * {
+  max-width: 100%;
 }

@@ -3,19 +3,20 @@ import "./styles.css";
 import ExploreView from "./components/ExploreView";
 import FilterBar from "./components/FilterBar";
 import FocusView from "./components/FocusView";
+import MapView from "./components/MapView";
 
 export default function App() {
   const [location, setLocation] = useState("nord");
-  const [dateFrom, setDateFrom] = useState("2024-01");
-  const [dateTo, setDateTo] = useState("2024-12");
+  const [dateFrom, setDateFrom] = useState("2024-01-01");
+  const [dateTo, setDateTo] = useState("2024-12-31");
   const [group, setGroup] = useState("beide");
   const [weatherList, setWeatherList] = useState([]);
   const [view, setView] = useState("fokus");
 
   const resetFilters = () => {
     setLocation("nord");
-    setDateFrom("2024-01");
-    setDateTo("2024-12");
+    setDateFrom("2024-01-01");
+    setDateTo("2024-12-31");
     setGroup("beide");
     setWeatherList([]);
   };
@@ -32,6 +33,16 @@ export default function App() {
       : location === "bahnhofplatz"
       ? "Bahnhofplatz"
       : "Alle";
+
+  const countMonthsInclusive = (fromYM, toYM) => {
+  const [fy, fm] = fromYM.split("-").map(Number);
+  const [ty, tm] = toYM.split("-").map(Number);
+    return (ty - fy) * 12 + (tm - fm) + 1;
+  };
+
+const monthsCount = countMonthsInclusive(dateFrom, dateTo);
+const wideExplore = monthsCount > 12; // z.B. 2022–2024
+
 
   return (
     <div className="app">
@@ -112,24 +123,30 @@ export default function App() {
         )}
 
         {view === "explore" && (
-          <div className="card">
-            <h2>Interaktive Abfrage</h2>
-            <p className="meta">
-              Vergleich der absoluten Passantenfrequenzen pro Monat (Kinder vs
-              Erwachsene).
-            </p>
+          <div className="twoCol">
+            <div className="card">
+              <h2>Interaktive Abfrage</h2>
+                <p className="meta">
+                  Vergleich der absoluten Passantenfrequenzen pro Monat (Kinder vs Erwachsene).
+                </p>
 
-            <div className="chartBox">
-              <ExploreView
-                location={location}
-                dateFrom={dateFrom}
-                dateTo={dateTo}
-                group={group}
-                weatherList={weatherList}
-              />
+                <div className="chartBox">
+                  <ExploreView
+                    location={location}
+                    dateFrom={dateFrom}
+                    dateTo={dateTo}
+                    group={group}
+                    weatherList={weatherList}
+                  />
+                </div>
+              </div>
+
+              <div className="card">
+                <MapView location={location} setLocation={setLocation} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
       </main>
     </div>
   );

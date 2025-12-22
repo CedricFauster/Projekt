@@ -86,61 +86,40 @@ export default function FilterBar({
         {/* Von Datum */}
         <div className="filterGroup">
           <label className="filterLabel">Von</label>
-          <div className="inlineControls">
-            <select
+            <input
               className="filterControl"
-              value={fromYear}
-              onChange={(e) => handleFromYearChange(e.target.value)}
-            >
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="filterControl"
-              value={fromMonth}
-              onChange={(e) => handleFromMonthChange(e.target.value)}
-            >
-              {MONTHS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label.slice(0, 3)}
-                </option>
-              ))}
-            </select>
+              type="date"
+              value={dateFrom}
+              max={dateTo}                 // sperrt: Von kann nicht nach Bis liegen
+              onChange={(e) => {
+                const nextFrom = e.target.value;
+                // Sicherheitsnetz:
+                if (nextFrom > dateTo) {
+                  setDateFrom(dateTo);
+                } else {
+                  setDateFrom(nextFrom);
+                }
+              }}
+            />
           </div>
-        </div>
 
-        {/* Bis Datum */}
-        <div className="filterGroup">
-          <label className="filterLabel">Bis</label>
-          <div className="inlineControls">
-            <select
+          <div className="filterGroup">
+            <label className="filterLabel">Bis</label>
+            <input
               className="filterControl"
-              value={toYear}
-              onChange={(e) => handleToYearChange(e.target.value)}
-            >
-              {YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="filterControl"
-              value={toMonth}
-              onChange={(e) => handleToMonthChange(e.target.value)}
-            >
-              {MONTHS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label.slice(0, 3)}
-                </option>
-              ))}
-            </select>
-          </div>
+              type="date"
+              value={dateTo}
+              min={dateFrom}               // sperrt: Bis kann nicht vor Von liegen
+              onChange={(e) => {
+              const nextTo = e.target.value;
+              // Sicherheitsnetz:
+              if (nextTo < dateFrom) {
+                setDateTo(dateFrom);
+              } else {
+                setDateTo(nextTo);
+              }
+            }}
+          />
         </div>
       </div>
 
