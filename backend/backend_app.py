@@ -1,6 +1,6 @@
-from typing import Optional # um Anfragen mit optionalen parameter zu machen
+from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse # Wird benötigt, wenn wir JSON-String zurückgeben
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 
@@ -88,13 +88,37 @@ def get_filtered_data(
     elif group == "erwachsene":
         df_filtered = df_filtered.drop(columns=['child_pedestrians_count'])
     # bei "beide" lassen wir einfach alles drin
-
-    # Performance-Check
-    if len(df_filtered) > 5000:
-        # Hier Performance weiter verbessern
-        pass 
-
+    
     return JSONResponse(content=df_filtered.to_json(orient='records'))
+
+'''  
+Für verbesserte Performance könnten Hier Datenabfragen > 1 Jahr aggregiert werden.
+
+    # Performance-Check & Automatische Aggregation
+    if start_time and end_time:
+        st = pd.to_datetime(start_time, utc=True)
+        et = pd.to_datetime(end_time, utc=True)
+        
+        if (et - st).days > 365:
+            print("INFO: Zeitspanne > 1 Jahr. Aggregiere auf Monatsbasis.")
+            
+            # 1. 'timestamp' als Index setzen für das Resampling
+            df_filtered = df_filtered.set_index('timestamp')
+            
+            # 2. Nur Kinder und Erwachsenen Spalten extrahieren
+            count_cols = [col for col in df_filtered.columns if 'adult_pedestrians_count' or 'child_pedestrians_count' in col]
+            
+            # 3. Auf Monate (MS = Month Start) aggregieren und Summe bilden
+            # 'location_name' bleibt erhalten, wenn nach einem Ort gefiltert wurde
+            df_filtered = df_filtered[count_cols].resample('MS').sum().reset_index()
+            
+            return JSONResponse(content=df_filtered.to_json(orient='records'))
+
+    # Performance-Chech 2
+    if len(df_filtered) > 5000:
+         print("INFO: Immernoch mehr als 5000 Zeilen.")
+         pass
+'''
 
 '''
 Abgeschlossen:
