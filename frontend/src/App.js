@@ -85,7 +85,7 @@ export default function App() {
           <div className="card">
             <h2>Fokusfrage</h2>
             <p>
-              Wie unterscheidet sich der Anteil von <strong>Kindern</strong> und{" "}
+              Wie verhält sich der Anteil von <strong>Kindern</strong> und{" "}
               <strong>Erwachsenen</strong> bei <strong>Nebel</strong> an der{" "}
               <strong>Bahnhofstrasse Nord</strong> im Jahr <strong>2024</strong>
               ?
@@ -100,8 +100,13 @@ export default function App() {
             </div>
 
             <p className="meta">
-              Der Anteil der Kinder ist in den Sommermonaten am höchsten,
-              während im Winter der Anteil der Erwachsenen überwiegt.
+              Der Anteil der Kinder an den Passantenfrequenzen bei Nebel
+              ist im Januar 2024 am höchsten. In den weiteren Wintermonaten 
+              nimmt dieser Anteil ab. Zwischen Februar und Oktober 2024 
+              liegen keine Messungen bei Nebel vor, weshalb für diesen Zeitraum keine 
+              Aussagen zum Vergleich möglich sind. 
+              Die Auswertung basiert daher ausschliesslich auf den vorhandenen 
+              Nebel-Messungen in den Wintermonaten.
             </p>
           </div>
         )}

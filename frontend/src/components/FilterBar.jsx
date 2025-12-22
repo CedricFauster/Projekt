@@ -79,61 +79,68 @@ export default function FilterBar({
         </select>
       </div>
 
-      {/* Von Datum */}
-      <div className="filterGroup">
-        <label className="filterLabel">Von</label>
-        <div style={{ display: "flex", gap: "4px" }}>
-          <select
-            className="filterControl"
-            value={fromYear}
-            onChange={(e) => handleFromYearChange(e.target.value)}
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          <select
-            className="filterControl"
-            value={fromMonth}
-            onChange={(e) => handleFromMonthChange(e.target.value)}
-          >
-            {MONTHS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label.slice(0, 3)}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <div className="divider" />
 
-      {/* Bis Datum */}
-      <div className="filterGroup">
-        <label className="filterLabel">Bis</label>
-        <div style={{ display: "flex", gap: "4px" }}>
-          <select
-            className="filterControl"
-            value={toYear}
-            onChange={(e) => handleToYearChange(e.target.value)}
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          <select
-            className="filterControl"
-            value={toMonth}
-            onChange={(e) => handleToMonthChange(e.target.value)}
-          >
-            {MONTHS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label.slice(0, 3)}
-              </option>
-            ))}
-          </select>
+      {/* Zeitraum */}
+      <div className="timeBlock">
+        {/* Von Datum */}
+        <div className="filterGroup">
+          <label className="filterLabel">Von</label>
+          <div className="inlineControls">
+            <select
+              className="filterControl"
+              value={fromYear}
+              onChange={(e) => handleFromYearChange(e.target.value)}
+            >
+              {YEARS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="filterControl"
+              value={fromMonth}
+              onChange={(e) => handleFromMonthChange(e.target.value)}
+            >
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label.slice(0, 3)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Bis Datum */}
+        <div className="filterGroup">
+          <label className="filterLabel">Bis</label>
+          <div className="inlineControls">
+            <select
+              className="filterControl"
+              value={toYear}
+              onChange={(e) => handleToYearChange(e.target.value)}
+            >
+              {YEARS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="filterControl"
+              value={toMonth}
+              onChange={(e) => handleToMonthChange(e.target.value)}
+            >
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label.slice(0, 3)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -142,41 +149,70 @@ export default function FilterBar({
       {/* Gruppe */}
       <div className="filterGroup">
         <label className="filterLabel">Gruppe</label>
-        <div className="optionContainer">
-          {["beide", "kinder", "erwachsene"].map((g) => (
-            <label key={g} className="checkLabel">
-              <input
-                type="radio"
-                name="groupSelect"
-                value={g}
-                checked={group === g}
-                onChange={(e) => setGroup(e.target.value)}
-              />
-              {g === "beide" ? "Beide" : g.charAt(0).toUpperCase() + g.slice(1)}
-            </label>
-          ))}
+
+        <div className="segmented" role="tablist" aria-label="Gruppe">
+          <button
+          type="button"
+          className={group === "beide" ? "segBtn active" : "segBtn"}
+          onClick={() => setGroup("beide")}
+          >
+            Beide
+          </button>
+          <button
+            type="button"
+            className={group === "kinder" ? "segBtn active" : "segBtn"}
+            onClick={() => setGroup("kinder")}
+          >
+            Kinder
+          </button>
+          <button
+            type="button"
+            className={group === "erwachsene" ? "segBtn active" : "segBtn"}
+            onClick={() => setGroup("erwachsene")}
+          >
+            Erwachsene
+          </button>
         </div>
       </div>
 
       {/* Wetter */}
       <div className="filterGroup fullWidth">
         <label className="filterLabel">Wetter (Mehrfachauswahl)</label>
-        <div className="checkboxGrid">
-          {WEATHER_OPTIONS.map((w) => (
-            <label key={w.id} className="checkLabel">
-              <input
-                type="checkbox"
-                checked={weatherList.includes(w.id)}
-                onChange={() => toggleWeather(w.id)}
-              />
-              {w.label}
-            </label>
-          ))}
+
+          <div className="chipRow">
+            <button
+              type="button"
+              className={weatherList.length === 0 ? "chip active" : "chip"}
+              onClick={() => setWeatherList([])}
+              title="Alle Wetterbedingungen"
+            >
+              Alle
+            </button>
+
+            {WEATHER_OPTIONS.map((w) => {
+              const isOn = weatherList.includes(w.id);
+              return (
+                <button
+                  key={w.id}
+                  type="button"
+                  className={isOn ? "chip active" : "chip"}
+                  onClick={() => {
+                  if (isOn) {
+                    setWeatherList(weatherList.filter((x) => x !== w.id));
+                  } else {
+                    setWeatherList([...weatherList, w.id]);
+                  }
+                }}
+                >
+                  {w.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
       <div className="filterActions">
-        <button type="button" className="btnSecondary" onClick={onReset}>
+        <button type="button" className="btnReset" onClick={onReset}>
           Reset
         </button>
       </div>
