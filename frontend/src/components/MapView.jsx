@@ -93,7 +93,9 @@ export default function MapView({ location, setLocation }) {
     <div className="mapWrap">
       <div className="mapHeader">
         <h2>Karte</h2>
-        <p className="meta">Klicke auf einen Abschnitt, um den Standort-Filter zu setzen.</p>
+        <p className="meta">
+          Klicke auf einen Abschnitt, um den Standort-Filter zu setzen.
+        </p>
       </div>
 
       <div className="mapBox">
@@ -124,8 +126,10 @@ export default function MapView({ location, setLocation }) {
                 }}
                 eventHandlers={{
                   click: () => setLocation(a.id),
-                  mouseover: (e) => e.target.setStyle({ fillOpacity: isActive ? 0.45 : 0.3 }),
-                  mouseout: (e) => e.target.setStyle({ fillOpacity: isActive ? 0.35 : 0.2 }),
+                  mouseover: (e) =>
+                    e.target.setStyle({ fillOpacity: isActive ? 0.45 : 0.3 }),
+                  mouseout: (e) =>
+                    e.target.setStyle({ fillOpacity: isActive ? 0.35 : 0.2 }),
                 }}
               >
                 <Tooltip sticky direction="top">

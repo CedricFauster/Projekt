@@ -1,22 +1,5 @@
 import React from "react";
 
-const YEARS = ["2021", "2022", "2023", "2024", "2025"];
-
-const MONTHS = [
-  { value: "01", label: "Januar" },
-  { value: "02", label: "Februar" },
-  { value: "03", label: "März" },
-  { value: "04", label: "April" },
-  { value: "05", label: "Mai" },
-  { value: "06", label: "Juni" },
-  { value: "07", label: "Juli" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "Oktober" },
-  { value: "11", label: "November" },
-  { value: "12", label: "Dezember" },
-];
-
 const WEATHER_OPTIONS = [
   { id: "cloudy", label: "Bewölkt" },
   { id: "partly-cloudy-day", label: "Teils bewölkter Tag" },
@@ -42,18 +25,8 @@ export default function FilterBar({
   setWeatherList,
   onReset,
 }) {
-  const [fromYear, fromMonth] = dateFrom.split("-");
-  const [toYear, toMonth] = dateTo.split("-");
-
-  const makeYM = (y, m) => `${y}-${m}`;
-
-  // --- HILFSFUNKTIONEN FÜR DATUM ---
-  const handleFromYearChange = (y) => setDateFrom(makeYM(y, fromMonth));
-  const handleFromMonthChange = (m) => setDateFrom(makeYM(fromYear, m));
-  const handleToYearChange = (y) => setDateTo(makeYM(y, toMonth));
-  const handleToMonthChange = (m) => setDateTo(makeYM(toYear, m));
-
-  const toggleWeather = (id) => {
+  // Funktion zum Hinzufügen/Entfernen von Wetter-Filtern
+  const handleToggleWeather = (id) => {
     if (weatherList.includes(id)) {
       setWeatherList(weatherList.filter((w) => w !== id));
     } else {
@@ -63,7 +36,7 @@ export default function FilterBar({
 
   return (
     <div className="filterBar">
-      {/* Standort */}
+      {/* Standort-Auswahl */}
       <div className="filterGroup">
         <label className="filterLabel">Standort</label>
         <select
@@ -81,115 +54,82 @@ export default function FilterBar({
 
       <div className="divider" />
 
-      {/* Zeitraum */}
+      {/* Zeit-Zeitraum (HTML5 Date Picker) */}
       <div className="timeBlock">
-        {/* Von Datum */}
         <div className="filterGroup">
           <label className="filterLabel">Von</label>
-            <input
-              className="filterControl"
-              type="date"
-              value={dateFrom}
-              max={dateTo}                 // sperrt: Von kann nicht nach Bis liegen
-              onChange={(e) => {
-                const nextFrom = e.target.value;
-                // Sicherheitsnetz:
-                if (nextFrom > dateTo) {
-                  setDateFrom(dateTo);
-                } else {
-                  setDateFrom(nextFrom);
-                }
-              }}
-            />
-          </div>
+          <input
+            className="filterControl"
+            type="date"
+            value={dateFrom}
+            max={dateTo}
+            onChange={(e) => {
+              const val = e.target.value;
+              setDateFrom(val > dateTo ? dateTo : val);
+            }}
+          />
+        </div>
 
-          <div className="filterGroup">
-            <label className="filterLabel">Bis</label>
-            <input
-              className="filterControl"
-              type="date"
-              value={dateTo}
-              min={dateFrom}               // sperrt: Bis kann nicht vor Von liegen
-              onChange={(e) => {
-              const nextTo = e.target.value;
-              // Sicherheitsnetz:
-              if (nextTo < dateFrom) {
-                setDateTo(dateFrom);
-              } else {
-                setDateTo(nextTo);
-              }
+        <div className="filterGroup">
+          <label className="filterLabel">Bis</label>
+          <input
+            className="filterControl"
+            type="date"
+            value={dateTo}
+            min={dateFrom}
+            onChange={(e) => {
+              const val = e.target.value;
+              setDateTo(val < dateFrom ? dateFrom : val);
             }}
           />
         </div>
       </div>
 
-      <div className="divider"></div>
+      <div className="divider" />
 
-      {/* Gruppe */}
+      {/* Gruppe (Segmented Control) */}
       <div className="filterGroup">
         <label className="filterLabel">Gruppe</label>
-
-        <div className="segmented" role="tablist" aria-label="Gruppe">
-          <button
-          type="button"
-          className={group === "beide" ? "segBtn active" : "segBtn"}
-          onClick={() => setGroup("beide")}
-          >
-            Beide
-          </button>
-          <button
-            type="button"
-            className={group === "kinder" ? "segBtn active" : "segBtn"}
-            onClick={() => setGroup("kinder")}
-          >
-            Kinder
-          </button>
-          <button
-            type="button"
-            className={group === "erwachsene" ? "segBtn active" : "segBtn"}
-            onClick={() => setGroup("erwachsene")}
-          >
-            Erwachsene
-          </button>
+        <div className="segmented">
+          {["beide", "kinder", "erwachsene"].map((g) => (
+            <button
+              key={g}
+              type="button"
+              className={group === g ? "segBtn active" : "segBtn"}
+              onClick={() => setGroup(g)}
+            >
+              {g.charAt(0).toUpperCase() + g.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Wetter */}
+      {/* Wetter-Chips (Mehrfachauswahl) */}
       <div className="filterGroup fullWidth">
         <label className="filterLabel">Wetter (Mehrfachauswahl)</label>
+        <div className="chipRow">
+          <button
+            type="button"
+            className={weatherList.length === 0 ? "chip active" : "chip"}
+            onClick={() => setWeatherList([])}
+          >
+            Alle
+          </button>
 
-          <div className="chipRow">
+          {WEATHER_OPTIONS.map((w) => (
             <button
+              key={w.id}
               type="button"
-              className={weatherList.length === 0 ? "chip active" : "chip"}
-              onClick={() => setWeatherList([])}
-              title="Alle Wetterbedingungen"
+              className={weatherList.includes(w.id) ? "chip active" : "chip"}
+              onClick={() => handleToggleWeather(w.id)}
             >
-              Alle
+              {w.label}
             </button>
-
-            {WEATHER_OPTIONS.map((w) => {
-              const isOn = weatherList.includes(w.id);
-              return (
-                <button
-                  key={w.id}
-                  type="button"
-                  className={isOn ? "chip active" : "chip"}
-                  onClick={() => {
-                  if (isOn) {
-                    setWeatherList(weatherList.filter((x) => x !== w.id));
-                  } else {
-                    setWeatherList([...weatherList, w.id]);
-                  }
-                }}
-                >
-                  {w.label}
-                </button>
-              );
-            })}
-          </div>
+          ))}
         </div>
+      </div>
 
+      {/* Aktionen */}
       <div className="filterActions">
         <button type="button" className="btnReset" onClick={onReset}>
           Reset
