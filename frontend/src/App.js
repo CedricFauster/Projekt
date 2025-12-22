@@ -41,7 +41,7 @@ export default function App() {
   };
 
 const monthsCount = countMonthsInclusive(dateFrom, dateTo);
-const wideExplore = monthsCount > 12; // z.B. 2022–2024
+const wideExplore = monthsCount > 12;
 
 
   return (
