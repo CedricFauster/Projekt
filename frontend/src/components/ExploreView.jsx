@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react"; // useState und useEffect hinzugefügt
+import React, { useEffect, useState, useMemo } from "react";
 import { VegaEmbed } from "react-vega";
 
 const MONTH_ORDER = [
@@ -37,7 +37,6 @@ export default function ExploreView({
   group,
   weatherList,
 }) {
-  // Props angepasst
   const [backendData, setBackendData] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -54,7 +53,7 @@ export default function ExploreView({
         };
         const realLocation = locationMapping[location] || location;
 
-        // URL ohne Wetter und Gruppe -> wir holen das "große Paket" für den Zeitraum
+        // URL ohne Wetter und Gruppe -> grosses Paket für den Zeitraum
         let url = `http://127.0.0.1:8000/data?location_name=${encodeURIComponent(
           realLocation
         )}`;
@@ -73,21 +72,19 @@ export default function ExploreView({
     };
 
     fetchData();
-  }, [location, dateFrom, dateTo]); // KEIN weatherList und group mehr hier!
+  }, [location, dateFrom, dateTo]); // Kein weatherList und group mehr hier
 
   const { values, isSingleYear } = useMemo(() => {
     const monthlyAgg = {};
-
-    // --- NEU: LOKALES FILTERN ---
     const filteredData = backendData.filter((item) => {
-      // Wetter-Filter: Wenn nichts gewählt ist, alles zeigen. Wenn was gewählt ist, muss es passen.
+      // Wetter-Filter
       const weatherMatch =
         weatherList.length === 0 ||
         weatherList.includes(item.weather_condition);
       return weatherMatch;
     });
 
-    // --- AGGREGATION (wie gehabt, aber auf filteredData) ---
+    // Aggregation
     filteredData.forEach((item) => {
       const dateObj = new Date(item.timestamp);
       const year = dateObj.getFullYear();
@@ -103,7 +100,6 @@ export default function ExploreView({
         };
       }
 
-      // Gruppen-Filter Logik:
       if (group === "beide" || group === "kinder") {
         monthlyAgg[key].Kinder += item.child_pedestrians_count || 0;
       }
@@ -112,7 +108,6 @@ export default function ExploreView({
       }
     });
 
-    // Tidy Data für Vega
     const out = [];
     Object.values(monthlyAgg).forEach((m) => {
       if (group === "beide" || group === "kinder") {
@@ -139,7 +134,7 @@ export default function ExploreView({
 
     out.sort((a, b) => a.ym.localeCompare(b.ym));
     return { values: out, isSingleYear: singleYear };
-  }, [backendData, weatherList, group, dateFrom, dateTo]); // HIER triggert alles die Grafik neu, ohne Fetch!
+  }, [backendData, weatherList, group, dateFrom, dateTo]);
 
   const spec = useMemo(() => {
     const axisCommon = {
@@ -157,7 +152,6 @@ export default function ExploreView({
       gridColor: "#1f2937",
     };
 
-    // Deutsche Monats-Abkuerzungen (Anzeige)
     const monthLabelExprShort =
       "datum.value === 'Jan' ? 'Jan' :" +
       "datum.value === 'Feb' ? 'Feb' :" +
@@ -172,8 +166,6 @@ export default function ExploreView({
       "datum.value === 'Nov' ? 'Nov' :" +
       "'Dez'";
 
-    // Multi-Year: Datum formatieren + englische Abkuerzungen -> deutsch ersetzen
-    // (Vega liefert %b standardmaessig englisch, deshalb ersetzen wir gezielt)
     const monthYearExpr =
       "replace(" +
       "replace(" +
@@ -183,7 +175,7 @@ export default function ExploreView({
       " 'May', 'Mai')," +
       " 'Oct', 'Okt')," +
       " 'Dec', 'Dez')," +
-      " 'Sep', 'Sep')"; // Sep ist gleich, bleibt nur als klare Struktur
+      " 'Sep', 'Sep')";
 
     const transform = isSingleYear
       ? []
@@ -227,7 +219,7 @@ export default function ExploreView({
 
       width: "container",
       height: 340,
-      autosize: {type: "fit", contains: "padding"},
+      autosize: { type: "fit", contains: "padding" },
       data: { values },
       transform,
 
